@@ -39,7 +39,10 @@ async def enviar_mensagem():
 
 async def main():
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(enviar_mensagem,'cron',hour=8,minute=0)
+    # Pega hora e minuto das variáveis de ambiente (com valores padrão caso não estejam definidas)
+    hour = int(os.getenv("SEND_HOUR", 8))      # padrão 8h
+    minute = int(os.getenv("SEND_MINUTE", 0))  # padrão 00min
+    scheduler.add_job(enviar_mensagem,'cron',hour=hour, minute=minute)
     scheduler.start()
 
     print("Bot agendado para enviar todos os dias")
