@@ -70,7 +70,7 @@ async def main():
     # Adiciona os handlers para:
     # - Qualquer texto que não é comando → mostrar botão
     # - Clique no botão → gerar frase
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_com_botao))
+    application.add_handler(MessageHandler(filters.TEXT, responder_com_botao))
     application.add_handler(CallbackQueryHandler(tratar_callback))
 
     # Roda o bot "ouvindo" em background
