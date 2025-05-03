@@ -4,6 +4,8 @@ import openai
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
 import os
+from telegram.ext import Application, MessageHandler, CallbackQueryHandler, filters, ContextTypes
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 
 # === CONFIGURAÇÕES ===
 TOKEN = os.getenv('TOKEN')
@@ -30,6 +32,24 @@ async def gerar_frase_motivacional():
         print("X Erro ao Gerar Frases: ", e)
         return "Não Desista de Tentar!"
 
+# === RESPONDER COM O BOTÃO NO TELEGRAM ===
+async def responder_com_botao(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    teclado = [
+        [InlineKeyboardButton("Seja Motivado!!!",callback_data="Motivar")]
+    ]
+    reply_markup = InlineKeyboardMarkup(teclado)
+    await update.message.reply_text(
+        "Não fique assim, clique abaixo e sinta Motivação.",
+        reply_markup=reply_markup
+    )
+
+# === TRATAR O BOTÃO NO TELEGRAM ===
+async def tratar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    frase = await gerar_frase_motivacional()
+    await query.message.reply_text(frase)
+
 # === ENVIO DA MENSAGEM ===
 async def enviar_mensagem():
     bot = Bot(token=TOKEN)
@@ -39,11 +59,22 @@ async def enviar_mensagem():
 
 async def main():
     scheduler = AsyncIOScheduler()
-    # Pega hora e minuto das variáveis de ambiente (com valores padrão caso não estejam definidas)
-    hour = int(os.getenv("SEND_HOUR", 8))      # padrão 8h
-    minute = int(os.getenv("SEND_MINUTE", 0))  # padrão 00min
+    hour = int(os.getenv("SEND_HOUR", 8))
+    minute = int(os.getenv("SEND_MINUTE", 0))
     scheduler.add_job(enviar_mensagem,'cron',hour=hour, minute=minute)
     scheduler.start()
+
+    # Inicializa o application do Telegram
+    application = Application.builder().token(TOKEN).build()
+
+    # Adiciona os handlers para:
+    # - Qualquer texto que não é comando → mostrar botão
+    # - Clique no botão → gerar frase
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_com_botao))
+    application.add_handler(CallbackQueryHandler(tratar_callback))
+
+    # Roda o bot "ouvindo" em background
+    application.run_background()
 
     print("Bot agendado para enviar todos os dias")
 
