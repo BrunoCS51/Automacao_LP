@@ -74,7 +74,8 @@ async def main():
     application.add_handler(CallbackQueryHandler(tratar_callback))
 
     # Roda o bot "ouvindo" em background
-    application.run_background()
+    await application.initialize()
+    await application.start()
 
     print("Bot agendado para enviar todos os dias")
 
