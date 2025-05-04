@@ -79,7 +79,7 @@ async def tratar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         salvar_frase(frase, "Botão")
 
     elif query.data == "Historico":
-        if colecao:
+        if colecao is not None:
             frases = list(colecao.find().sort("data_hora", -1).limit(30))  # últimas 30 frases
             if not frases:
                 await query.message.reply_text("Nenhuma frase encontrada no histórico.")
