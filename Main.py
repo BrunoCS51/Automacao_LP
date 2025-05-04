@@ -76,13 +76,16 @@ async def enviar_mensagem():
     salver_frase(frase,"Automático")
     print("✅ Frase enviada:", frase)
 
-async def main():
+# === agendar envio de mensagem ===
+async def agendar_envio_diario():
     scheduler = AsyncIOScheduler()
     hour = int(os.getenv("SEND_HOUR", 8))
     minute = int(os.getenv("SEND_MINUTE", 0))
-    scheduler.add_job(enviar_mensagem,'cron',hour=hour, minute=minute)
+    scheduler.add_job(enviar_mensagem, 'cron', hour=hour, minute=minute)
     scheduler.start()
+    print("🕗 Envio diário agendado!")
 
+async def main():
     # Inicializa o application do Telegram
     application = Application.builder().token(TOKEN).build()
 
@@ -92,10 +95,11 @@ async def main():
     application.add_handler(MessageHandler(filters.TEXT, responder_com_botao))
     application.add_handler(CallbackQueryHandler(tratar_callback))
 
-    # Roda o bot "ouvindo" em background
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling()
+    # Agenda o envio diário em segundo plano
+    asyncio.create_task(agendar_envio_diario())
+
+    # Inicia o bot
+    application.run_polling()
 
     print("Bot agendado para enviar todos os dias")
 
