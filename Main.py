@@ -10,6 +10,7 @@ from pymongo import MongoClient
 from fpdf import FPDF
 import tempfile
 import re
+import unicodedata
 
 # === CONFIGURAÇÕES ===
 TOKEN = os.getenv('TOKEN')
@@ -109,7 +110,10 @@ async def agendar_envio_diario(application):
 
 # === REMOVENDO EMOJI DO PDF ===
 def remover_emojis(texto):
-    return re.sub(r'[^\x00-\x7F]+', '', texto)
+    # Normaliza o texto para separar letras de acentos
+    texto = unicodedata.normalize('NFKD', texto)
+    # Remove apenas símbolos gráficos e emojis
+    return ''.join(c for c in texto if unicodedata.category(c)[0] != 'So')
 
 # === GERAR PDF DO HISTORICO ===
 def gerar_pdf_frases(frases):
