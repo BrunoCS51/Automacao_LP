@@ -9,6 +9,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from pymongo import MongoClient
 from fpdf import FPDF
 import tempfile
+import re
 
 # === CONFIGURAÇÕES ===
 TOKEN = os.getenv('TOKEN')
@@ -106,6 +107,10 @@ async def agendar_envio_diario(application):
     scheduler.start()
     print("🕗 Envio diário agendado!")
 
+# === REMOVENDO EMOJI DO PDF ===
+def remover_emojis(texto):
+    return re.sub(r'[^\x00-\x7F]+', '', texto)
+
 # === GERAR PDF DO HISTORICO ===
 def gerar_pdf_frases(frases):
     pdf = FPDF()
@@ -115,7 +120,8 @@ def gerar_pdf_frases(frases):
     pdf.ln(10)
 
     for frase in frases:
-        linha = f"{frase['data_hora'].strftime('%d/%m/%Y %H:%M')} - [{frase['modelo']}] {frase['frase']}"
+        frase_limpa = remover_emojis(frase['frase'])
+        linha = f"{frase['data_hora'].strftime('%d/%m/%Y %H:%M')} - [{frase['modelo']}] {frase_limpa}"
         pdf.multi_cell(0, 10, linha)
         pdf.ln(2)
 
