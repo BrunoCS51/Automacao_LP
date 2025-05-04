@@ -85,7 +85,7 @@ async def agendar_envio_diario():
     scheduler.start()
     print("🕗 Envio diário agendado!")
 
-async def main():
+def main():
     # Inicializa o application do Telegram
     application = Application.builder().token(TOKEN).build()
 
@@ -103,10 +103,5 @@ async def main():
 
     print("Bot agendado para enviar todos os dias")
 
-    while True:
-        await asyncio.sleep(60)
-
-
 # === EXECUÇÃO ===
-if __name__ == '__main__':
-    main()
+main()
