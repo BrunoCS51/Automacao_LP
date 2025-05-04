@@ -3,3 +3,4 @@ openai
 apscheduler
 pymongo[srv]
 dnspython
+fpdf
