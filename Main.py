@@ -24,14 +24,17 @@ except Exception as e:
     colecao = None
 
 # === FUNÇÃO PARA SALVAR NO BANCO DE DADOS ===
-def salvar_frase(frase,modelo):
+def salvar_frase(frase, modelo):
+    if colecao is None:
+        print("⚠️ Banco de dados indisponível, não foi possível salvar a frase.")
+        return
     documento = {
         "data_hora": datetime.now(),
         "modelo": modelo,
         "frase": frase
     }
     colecao.insert_one(documento)
-    print("Frase salva no banco: ", documento)
+    print("💾 Frase salva no banco: ", documento)
 
 # === GERADOR DE FRASE COM CHATGPT ===
 async def gerar_frase_motivacional():
@@ -40,24 +43,21 @@ async def gerar_frase_motivacional():
         response = await client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system","content":"Você é um gerador de frases motivacionais curtas."},
-                {"role": "user","content":"Me envie uma frase motivacial simples, curta e positiva."}
+                {"role": "system", "content": "Você é um gerador de frases motivacionais curtas."},
+                {"role": "user", "content": "Me envie uma frase motivacional simples, curta e positiva."}
             ],
             temperature=0.7,
             max_tokens=60
         )
         frase = response.choices[0].message.content.strip()
         return frase
-
     except Exception as e:
         print("X Erro ao Gerar Frases: ", e)
         return "Não Desista de Tentar!"
 
 # === RESPONDER COM O BOTÃO NO TELEGRAM ===
 async def responder_com_botao(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    teclado = [
-        [InlineKeyboardButton("Seja Motivado!!!",callback_data="Motivar")]
-    ]
+    teclado = [[InlineKeyboardButton("Seja Motivado!!!", callback_data="Motivar")]]
     reply_markup = InlineKeyboardMarkup(teclado)
     await update.message.reply_text(
         "Não fique assim, clique abaixo e sinta Motivação.",
@@ -70,33 +70,36 @@ async def tratar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     frase = await gerar_frase_motivacional()
     await query.message.reply_text(frase)
-    salvar_frase(frase,"Botão")
+    salvar_frase(frase, "Botão")
 
-# === ENVIO DA MENSAGEM ===
+# === ENVIO DA MENSAGEM AGENDADA ===
 async def enviar_mensagem():
     bot = Bot(token=TOKEN)
     frase = await gerar_frase_motivacional()
     await bot.send_message(chat_id=CHAT_ID, text=frase)
-    salvar_frase(frase,"Automático")
+    salvar_frase(frase, "Automático")
     print("✅ Frase enviada:", frase)
 
-# === PRINCIPAL ===
-async def main():
+# === FUNÇÃO PARA AGENDAR ENVIO ===
+def iniciar_agendamento():
+    scheduler = AsyncIOScheduler()
+    hour = int(os.getenv("SEND_HOUR", 8))
+    minute = int(os.getenv("SEND_MINUTE", 0))
+    scheduler.add_job(lambda: asyncio.create_task(enviar_mensagem()), 'cron', hour=hour, minute=minute)
+    scheduler.start()
+    print("🕗 Envio diário agendado!")
+
+# === EXECUTAR BOT ===
+def main():
     application = Application.builder().token(TOKEN).build()
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_com_botao))
     application.add_handler(CallbackQueryHandler(tratar_callback))
 
-    # Agendar envio diário
-    scheduler = AsyncIOScheduler()
-    hour = int(os.getenv("SEND_HOUR", 8))
-    minute = int(os.getenv("SEND_MINUTE", 0))
-    scheduler.add_job(enviar_mensagem, 'cron', hour=hour, minute=minute)
-    scheduler.start()
-    print("🕗 Envio diário agendado!")
+    iniciar_agendamento()
 
     print("🤖 Bot rodando com polling + agendamento")
-    await application.run_polling()
+    application.run_polling()
 
-# === EXECUÇÃO ===
-asyncio.run(main())
+if __name__ == "__main__":
+    main()
