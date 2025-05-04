@@ -15,12 +15,16 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 MONGO_URI = os.getenv("MONGO_URI")
 
 # === CONEXAO COM BANCO DE DADOS ===
-client = MongoClient(MONGO_URI)
-db = client["frases_motivacionais"]
-colecao = db["mensagens"]
+try:
+    client = MongoClient(MONGO_URI)
+    db = client["frases_motivacionais"]
+    colecao = db["mensagens"]
+except Exception as e:
+    print("Erro ao conectar ao MongoDB:", e)
+    colecao = None
 
 # === FUNÇÃO PARA SALVAR NO BANCO DE DADOS ===
-def salver_frase(frase,modelo):
+def salvar_frase(frase,modelo):
     documento = {
         "data_hora": datetime.now(),
         "modelo": modelo,
@@ -66,18 +70,18 @@ async def tratar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     frase = await gerar_frase_motivacional()
     await query.message.reply_text(frase)
-    salver_frase(frase,"Botão")
+    salvar_frase(frase,"Botão")
 
 # === ENVIO DA MENSAGEM ===
 async def enviar_mensagem():
     bot = Bot(token=TOKEN)
     frase = await gerar_frase_motivacional()
     await bot.send_message(chat_id=CHAT_ID, text=frase)
-    salver_frase(frase,"Automático")
+    salvar_frase(frase,"Automático")
     print("✅ Frase enviada:", frase)
 
 # === agendar envio de mensagem ===
-async def agendar_envio_diario():
+async def agendar_envio_diario(application):
     scheduler = AsyncIOScheduler()
     hour = int(os.getenv("SEND_HOUR", 8))
     minute = int(os.getenv("SEND_MINUTE", 0))
