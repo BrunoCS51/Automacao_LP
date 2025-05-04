@@ -12,7 +12,7 @@ from pymongo import MongoClient
 TOKEN = os.getenv('TOKEN')
 CHAT_ID = os.getenv('CHAT_ID')
 openai.api_key = os.getenv('OPENAI_API_KEY')
-MONGO_URI = os.getenv("MONGO_URI")
+MONGO_URI = os.getenv('MONGO_URI')
 
 # === CONEXAO COM BANCO DE DADOS ===
 try:
