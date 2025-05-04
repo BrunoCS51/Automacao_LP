@@ -7,6 +7,8 @@ import os
 from telegram.ext import Application, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from pymongo import MongoClient
+from fpdf import FPDF
+import tempfile
 
 # === CONFIGURAÇÕES ===
 TOKEN = os.getenv('TOKEN')
@@ -57,10 +59,13 @@ async def gerar_frase_motivacional():
 
 # === RESPONDER COM O BOTÃO NO TELEGRAM ===
 async def responder_com_botao(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    teclado = [[InlineKeyboardButton("Seja Motivado!!!", callback_data="Motivar")]]
+    teclado = [
+        [InlineKeyboardButton("Seja Motivado!!!", callback_data="Motivar")],
+        [InlineKeyboardButton("📜 Ver Histórico", callback_data="Historico")]
+    ]
     reply_markup = InlineKeyboardMarkup(teclado)
     await update.message.reply_text(
-        "Não fique assim, clique abaixo e sinta Motivação.",
+        "Seja Motivado!!! - Escolha uma opção abaixo:",
         reply_markup=reply_markup
     )
 
@@ -68,9 +73,21 @@ async def responder_com_botao(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def tratar_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    frase = await gerar_frase_motivacional()
-    await query.message.reply_text(frase)
-    salvar_frase(frase, "Botão")
+    if query.data == "Motivar":
+        frase = await gerar_frase_motivacional()
+        await query.message.reply_text(frase)
+        salvar_frase(frase, "Botão")
+
+    elif query.data == "Historico":
+        if colecao:
+            frases = list(colecao.find().sort("data_hora", -1).limit(30))  # últimas 30 frases
+            if not frases:
+                await query.message.reply_text("Nenhuma frase encontrada no histórico.")
+                return
+            caminho_pdf = gerar_pdf_frases(frases)
+            await query.message.reply_document(document=open(caminho_pdf, "rb"))
+        else:
+            await query.message.reply_text("Erro: banco de dados não está conectado.")
 
 # === ENVIO DA MENSAGEM AGENDADA ===
 async def enviar_mensagem():
@@ -89,6 +106,23 @@ async def agendar_envio_diario(application):
     scheduler.start()
     print("🕗 Envio diário agendado!")
 
+# === GERAR PDF DO HISTORICO ===
+def gerar_pdf_frases(frases):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial",size=12)
+    pdf.cell(200,10,txt="Histórico de Frases Motivacionais", ln=True, align="C")
+    pdf.ln(10)
+
+    for frase in frases:
+        linha = f"{frase['data_hora'].strftime('%d/%m/%Y %H:%M')} - [{frase['modelo']}] {frase['frase']}"
+        pdf.multi_cell(0, 10, linha)
+        pdf.ln(2)
+
+    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    pdf.output(temp.name)
+    return temp.name
+
 # === FUNÇÃO PRINCIPAL ===
 def main():
     application = Application.builder().token(TOKEN).post_init(agendar_envio_diario).build()
@@ -101,4 +135,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
