@@ -80,26 +80,25 @@ async def enviar_mensagem():
     salvar_frase(frase, "Automático")
     print("✅ Frase enviada:", frase)
 
-# === FUNÇÃO PARA AGENDAR ENVIO ===
-def iniciar_agendamento():
+# === AGENDAR ENVIO DIÁRIO ===
+async def agendar_envio_diario(application):
     scheduler = AsyncIOScheduler()
     hour = int(os.getenv("SEND_HOUR", 8))
     minute = int(os.getenv("SEND_MINUTE", 0))
-    scheduler.add_job(lambda: asyncio.create_task(enviar_mensagem()), 'cron', hour=hour, minute=minute)
+    scheduler.add_job(lambda: application.create_task(enviar_mensagem()), 'cron', hour=hour, minute=minute)
     scheduler.start()
     print("🕗 Envio diário agendado!")
 
-# === EXECUTAR BOT ===
+# === FUNÇÃO PRINCIPAL ===
 def main():
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder().token(TOKEN).post_init(agendar_envio_diario).build()
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_com_botao))
     application.add_handler(CallbackQueryHandler(tratar_callback))
-
-    iniciar_agendamento()
 
     print("🤖 Bot rodando com polling + agendamento")
     application.run_polling()
 
 if __name__ == "__main__":
     main()
+
