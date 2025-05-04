@@ -110,10 +110,11 @@ async def agendar_envio_diario(application):
 
 # === REMOVENDO EMOJI DO PDF ===
 def remover_emojis(texto):
-    # Normaliza o texto para separar letras de acentos
-    texto = unicodedata.normalize('NFKD', texto)
-    # Remove apenas símbolos gráficos e emojis
-    return ''.join(c for c in texto if unicodedata.category(c)[0] != 'So')
+    texto_sem_emojis = ''.join(
+        c for c in texto
+        if not unicodedata.category(c).startswith('So')  # Remove somente símbolos gráficos e emojis
+    )
+    return texto_sem_emojis
 
 # === GERAR PDF DO HISTORICO ===
 def gerar_pdf_frases(frases):
@@ -126,6 +127,7 @@ def gerar_pdf_frases(frases):
     for frase in frases:
         frase_limpa = remover_emojis(frase['frase'])
         linha = f"{frase['data_hora'].strftime('%d/%m/%Y %H:%M')} - [{frase['modelo']}] {frase_limpa}"
+        linha = linha.encode("latin-1", "ignore").decode("latin-1")  # Ignora qualquer caractere não suportado
         pdf.multi_cell(0, 10, linha)
         pdf.ln(2)
 
