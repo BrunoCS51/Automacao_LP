@@ -152,4 +152,5 @@ def main():
     print("🤖 Bot rodando com polling + agendamento")
     application.run_polling()
 
-main()
+if __name__ == "__main__":
+    main()
