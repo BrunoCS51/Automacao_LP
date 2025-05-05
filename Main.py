@@ -2,7 +2,7 @@ from telegram import Bot
 import asyncio
 import openai
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from telegram.ext import Application, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -11,6 +11,7 @@ from fpdf import FPDF
 import tempfile
 import re
 import unicodedata
+from asyncio import run_coroutine_threadsafe
 
 # === CONFIGURAÇÕES ===
 TOKEN = os.getenv('TOKEN')
@@ -33,7 +34,7 @@ def salvar_frase(frase, modelo):
         print("⚠️ Banco de dados indisponível, não foi possível salvar a frase.")
         return
     documento = {
-        "data_hora": datetime.now(),
+        "data_hora": datetime.now() - timedelta(hours=3),
         "modelo": modelo,
         "frase": frase
     }
@@ -104,7 +105,12 @@ async def agendar_envio_diario(application):
     scheduler = AsyncIOScheduler()
     hour = int(os.getenv("SEND_HOUR", 8))
     minute = int(os.getenv("SEND_MINUTE", 0))
-    scheduler.add_job(lambda: application.create_task(enviar_mensagem()), 'cron', hour=hour, minute=minute)
+    scheduler.add_job(
+    lambda: run_coroutine_threadsafe(enviar_mensagem(), application.bot.loop),
+    'cron',
+    hour=hour,
+    minute=minute
+)
     scheduler.start()
     print("🕗 Envio diário agendado!")
 
