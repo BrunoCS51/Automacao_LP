@@ -105,12 +105,13 @@ async def agendar_envio_diario(application):
     scheduler = AsyncIOScheduler()
     hour = int(os.getenv("SEND_HOUR", 8))
     minute = int(os.getenv("SEND_MINUTE", 0))
+    loop = asyncio.get_event_loop()
     scheduler.add_job(
-    lambda: run_coroutine_threadsafe(enviar_mensagem(), application.bot.loop),
-    'cron',
-    hour=hour,
-    minute=minute
-)
+        lambda: run_coroutine_threadsafe(enviar_mensagem(), loop),
+        'cron',
+        hour=hour,
+        minute=minute
+    )
     scheduler.start()
     print("🕗 Envio diário agendado!")
 
