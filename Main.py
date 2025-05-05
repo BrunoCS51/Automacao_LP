@@ -163,6 +163,7 @@ def gerar_pdf_frases(frases):
 
 # === FUNÇÃO PRINCIPAL ===
 def main():
+    time.sleep(20)
     application = Application.builder().token(TOKEN).post_init(agendar_envio_diario).build()
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_com_botao))
