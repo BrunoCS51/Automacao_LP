@@ -127,21 +127,35 @@ def remover_emojis(texto):
 def gerar_pdf_frases(frases):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial",size=12)
-    pdf.cell(200,10,txt="Histórico de Frases Motivacionais", ln=True, align="C")
-    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, txt="Histórico de Frases Motivacionais", ln=True, align="C")
+    pdf.ln(8)
+    pdf.set_font("Arial", size=11)
 
-    for frase in frases:
-        frase_limpa = remover_emojis(frase['frase'])
-        try:
-            data_formatada = datetime.fromisoformat(frase['data_hora']).strftime('%d/%m/%Y %H:%M')
-        except:
-            data_formatada = datetime.strptime(frase['data_hora'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d/%m/%Y %H:%M')
-    
+    for i, frase in enumerate(frases):
+        # Detectar se data_hora é datetime ou string
+        data_raw = frase["data_hora"]
+        if isinstance(data_raw, datetime):
+            data_formatada = data_raw.strftime('%d/%m/%Y %H:%M')
+        elif isinstance(data_raw, str):
+            try:
+                # Tenta formatar sem microsegundos primeiro
+                data_formatada = datetime.fromisoformat(data_raw.split(".")[0]).strftime('%d/%m/%Y %H:%M')
+            except:
+                data_formatada = data_raw  # fallback caso esteja fora do formato esperado
+        else:
+            data_formatada = "Data inválida"
+
+        frase_limpa = remover_emojis(frase["frase"])
         linha = f"{data_formatada} - [{frase['modelo']}] {frase_limpa}"
-        linha = linha.encode("latin-1", "ignore").decode("latin-1")  # Ignora qualquer caractere não suportado
+
         pdf.multi_cell(0, 10, linha)
-        pdf.ln(2)
+        pdf.ln(3)
+
+        # Linha separadora a cada 5 frases
+        if (i + 1) % 5 == 0:
+            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            pdf.ln(3)
 
     temp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf.output(temp.name)
