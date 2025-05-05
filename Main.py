@@ -136,8 +136,8 @@ def gerar_pdf_frases(frases):
         try:
             data_formatada = datetime.fromisoformat(frase['data_hora']).strftime('%d/%m/%Y %H:%M')
         except:
-            data_formatada = str(frase['data_hora'])  # fallback para casos antigos
-
+            data_formatada = datetime.strptime(frase['data_hora'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d/%m/%Y %H:%M')
+    
         linha = f"{data_formatada} - [{frase['modelo']}] {frase_limpa}"
         linha = linha.encode("latin-1", "ignore").decode("latin-1")  # Ignora qualquer caractere não suportado
         pdf.multi_cell(0, 10, linha)
