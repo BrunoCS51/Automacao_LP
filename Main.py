@@ -12,6 +12,7 @@ import tempfile
 import re
 import unicodedata
 from asyncio import run_coroutine_threadsafe
+import time
 
 # === CONFIGURAÇÕES ===
 TOKEN = os.getenv('TOKEN')
