@@ -133,7 +133,12 @@ def gerar_pdf_frases(frases):
 
     for frase in frases:
         frase_limpa = remover_emojis(frase['frase'])
-        linha = f"{frase['data_hora'].strftime('%d/%m/%Y %H:%M')} - [{frase['modelo']}] {frase_limpa}"
+        try:
+            data_formatada = datetime.fromisoformat(frase['data_hora']).strftime('%d/%m/%Y %H:%M')
+        except:
+            data_formatada = str(frase['data_hora'])  # fallback para casos antigos
+
+        linha = f"{data_formatada} - [{frase['modelo']}] {frase_limpa}"
         linha = linha.encode("latin-1", "ignore").decode("latin-1")  # Ignora qualquer caractere não suportado
         pdf.multi_cell(0, 10, linha)
         pdf.ln(2)
@@ -152,5 +157,5 @@ def main():
     print("🤖 Bot rodando com polling + agendamento")
     application.run_polling()
 
-if __name__ == "__main__":
-    main()
+
+main()
