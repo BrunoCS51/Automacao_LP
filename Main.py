@@ -1,3 +1,4 @@
+# === BIBLIOTECAS UTILIZADAS ===
 from telegram import Bot
 import asyncio
 import openai
@@ -9,7 +10,6 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from pymongo import MongoClient
 from fpdf import FPDF
 import tempfile
-import re
 import unicodedata
 from asyncio import run_coroutine_threadsafe
 import time
